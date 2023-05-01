@@ -21,7 +21,12 @@ class DataViewController: UIViewController {
         let tapGesture = UITapGestureRecognizer()
         self.view.addGestureRecognizer(tapGesture)
         tapGesture.addTarget(self, action: #selector(tapEvent))
-        //imageViewer?.kf.setImage(with: URL(string:game.gameIcon)!)
+        imageViewer?.kf.setImage(with: URL(string:game!.gameIcon)!)
+
+    }
+    func configure() {
+        _ = self.view
+
     }
     
    

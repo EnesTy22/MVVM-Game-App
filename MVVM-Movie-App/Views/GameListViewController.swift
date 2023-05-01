@@ -12,26 +12,51 @@ class GameListViewController: UIViewController{
     @IBOutlet var tableView: UITableView!
     @IBOutlet var contentView: UIView!
     
+    let searchController = UISearchController()
+    
     var currentViewControllerIndex = 0
     var gameListSlide = ["ererer","dfpdf","osfdosd"]
     var favList :[Int] = []
-
     var gameListVM = GameListViewModel()
     var webService = WebService()
     var sliderSize = 3
+    var isSearched = false
+    var oldHeightConstraint :CGFloat!
     
     override func viewDidLoad() {
+        let heightConstraint = contentView.constraints.first { $0.firstAttribute == .height }
+        oldHeightConstraint = heightConstraint!.constant
         tableView.delegate = self
         tableView.dataSource = self
+        searchController.searchResultsUpdater = self
+        searchController.delegate = self
+        if let statusBarFrame = UIApplication.shared.windows.first?.windowScene?.statusBarManager?.statusBarFrame {
+                let statusBarView = UIView(frame: statusBarFrame)
+            statusBarView.backgroundColor = UIColor.darkGray
+                view.addSubview(statusBarView)
+            }
+        searchControllerSetup()
         setup()
         favList = gameListVM.getFavGameList()
+        navigationItem.searchController = searchController
         tableView.register(UINib(nibName: "GameCellTableViewCell",bundle:nil), forCellReuseIdentifier: "GameCellTableViewCell")
        
     }
+    func searchControllerSetup(){
+        searchController.searchBar.translatesAutoresizingMaskIntoConstraints = false
+
+        if let searchTextField = searchController.searchBar.value(forKey: "searchField") as? UITextField {
+            searchTextField.backgroundColor = UIColor.white
+            searchTextField.textAlignment = .center // Arama metni alanını ortalamak için
+// Burada istediğiniz arka plan rengini atayabilirsiniz.
+        }
+        
+    }
     override func viewWillAppear(_ animated: Bool) {
         favList = gameListVM.getFavGameList()
+        
         tableView.reloadData()
-        configurePageViewController()
+        //configurePageViewController()
 
     }
     func setup(){
@@ -87,8 +112,8 @@ class GameListViewController: UIViewController{
         if (gameListVM.games.count != 0)
         {
             dataViewController.game = gameListVM.games[dataViewController.index]
-
-            //dataViewController.displayImage = gameListVM.games[dataViewController.index].gameIcon
+            dataViewController.configure()
+            dataViewController.displayImage = gameListVM.games[dataViewController.index].gameIcon
         }
         return dataViewController
     }
@@ -102,6 +127,7 @@ extension GameListViewController:UIPageViewControllerDelegate,UIPageViewControll
     }
     
     func presentationCount(for pageViewController: UIPageViewController) -> Int {
+        
         return gameListSlide.count
     }
     
@@ -138,6 +164,10 @@ extension GameListViewController:UIPageViewControllerDelegate,UIPageViewControll
 extension GameListViewController:UITableViewDelegate,UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if isSearched{
+            print()
+            return gameListVM.filteredGameArray.count
+        }
         return (gameListVM.numbersOfRowsInSection() - sliderSize)
     }
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -146,7 +176,14 @@ extension GameListViewController:UITableViewDelegate,UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "GameCellTableViewCell",for: indexPath) as! GameCellTableViewCell
-        let game = gameListVM.games[indexPath.row + sliderSize]
+        var game :GameViewModel
+        if isSearched{
+             game = gameListVM.filteredGameArray[indexPath.row]
+        }
+        else{
+             game = gameListVM.games[indexPath.row + sliderSize]
+
+        }
         var starState = false
         if favList.contains(game.id){
             starState=true
@@ -156,13 +193,63 @@ extension GameListViewController:UITableViewDelegate,UITableViewDataSource{
         return cell
     }
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let game = gameListVM.games[indexPath.row+sliderSize]
+        var game:GameViewModel
+        if isSearched{
+            game = gameListVM.filteredGameArray[indexPath.row]
+        }
+        else{
+            game = gameListVM.games[indexPath.row+sliderSize]
+        }
+        
         let detailsPage = DetailsViewController.instantiate()
 
-        detailsPage.gameVM = game
-        detailsPage.configureDetails()
-        navigationController?.pushViewController(detailsPage, animated: true)
+        gameListVM.getGamesByID(id:[ game.id]) { GameViewModel in
+            detailsPage.gameVM = GameViewModel?.first
+            DispatchQueue.main.async {
+                detailsPage.configureDetails()
+                self.navigationController?.pushViewController(detailsPage, animated: true)
+
+            }
+            
+        }
+//
 
     }
 }
-
+extension GameListViewController: UISearchResultsUpdating,UISearchControllerDelegate {
+    
+    func didDismissSearchController(_ searchController: UISearchController) {
+        onCloseSearchController()
+    }
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let searchText = searchController.searchBar.text else
+        {
+            return
+        }
+        if (searchText.count > 3)
+        {
+            gameListVM.filteredGameArray = gameListVM.games.filter {
+                return $0.name.lowercased().contains(searchText.lowercased())
+            }
+            onOpenSearchController()
+        }
+    }
+    func onOpenSearchController(){
+        let heightConstraint = contentView.constraints.first { $0.firstAttribute == .height }
+        heightConstraint?.constant = 0
+        isSearched = true
+        contentView.isHidden = true
+        tableView.reloadData()
+    }
+    func onCloseSearchController(){
+        let heightConstraint = contentView.constraints.first { $0.firstAttribute == .height }
+        heightConstraint?.constant = oldHeightConstraint
+        isSearched = false
+        contentView.isHidden = false
+        tableView.reloadData()
+    }
+    
+    
+    
+    
+}

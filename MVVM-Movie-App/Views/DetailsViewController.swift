@@ -22,7 +22,7 @@ class DetailsViewController: UIViewController {
         imageViewer.kf.setImage(with: URL(string:gameVM.gameIcon))
         releaseDate.text = gameVM.released
         metaCriticRate.text = String(gameVM.ratings)
-        
+        details.text = gameVM.description
         gameName.text = gameVM.name        // Do any additional setup after loading the view.
     }
     

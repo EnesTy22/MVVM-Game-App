@@ -16,6 +16,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let pageControl = UIPageControl.appearance()
         pageControl.currentPageIndicatorTintColor = .black
         pageControl.pageIndicatorTintColor = .lightGray
+        
+        if #available(iOS 13.0, *) {
+            let appearance = UINavigationBarAppearance()
+            let tabbarAppearance = UITabBarAppearance().backgroundColor
+            
+            appearance.backgroundColor = .red
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            UINavigationBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().barTintColor = tabbarAppearance
+        } else {
+            UIApplication.shared.statusBarStyle = .lightContent
+        }
         // Override point for customization after application launch.
         return true
     }

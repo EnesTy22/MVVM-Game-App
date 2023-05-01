@@ -14,6 +14,7 @@ struct GameList: Decodable {
 struct Game: Decodable {
     let id: Int
     let slug, name, released: String
+    var description_raw :String?
     let background_image: String
     let rating: Double
     

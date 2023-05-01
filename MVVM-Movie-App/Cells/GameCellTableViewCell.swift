@@ -33,6 +33,7 @@ class GameCellTableViewCell: UITableViewCell {
         gameListVM = gameList
         id=game.id
         gameicon.kf.setImage(with: URL(string:game.gameIcon),placeholder: nil)
+        gameicon.layer.cornerRadius = 10
         UpdateFavsView()
     }
 

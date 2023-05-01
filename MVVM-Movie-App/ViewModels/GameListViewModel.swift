@@ -8,7 +8,9 @@
 import Foundation
 struct GameListViewModel{
     var games : [GameViewModel] = []
+    var filteredGameArray: [GameViewModel] = []
     var coreService = CoreService()
+    var webService = WebService()
     
 }
 extension GameListViewModel{
@@ -27,6 +29,18 @@ extension GameListViewModel{
     func deleteFavGame(gameId:Int){
         CoreService()?.deleteFavGame(gameId: gameId)
     }
+    func getGamesByID(id: [Int],completion: @escaping ([GameViewModel]?)->()){
+        var findedGames:[GameViewModel]=[]
+        webService.getGamesByID(idList: id) { findedGamesClosure in
+                findedGamesClosure!.map{findedGames.append(GameViewModel($0))}
+                completion(findedGames)
+            
+        }
+     //   completion(findedGames)
+        
+        
+    }
+    
         func addFavGame(id:Int)
         {
             coreService?.addFavGame(id: id)
@@ -56,6 +70,10 @@ struct GameViewModel{
     var gameIcon:String{
         return self.game.background_image
     }
+    var description:String?{
+        return self.game.description_raw
+    }
+    
 }
 extension GameViewModel{
     
